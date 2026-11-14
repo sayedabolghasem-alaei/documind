@@ -1,0 +1,146 @@
+{
+    "directed": true,
+    "multigraph": false,
+    "graph": {},
+    "nodes": [
+        {
+            "entity_type": "ORGANIZATION",
+            "description": "A company that developed DocuMind",
+            "id": "شرکت آلفا"
+        },
+        {
+            "entity_type": "PRODUCT",
+            "description": "A product developed by Alpha Company",
+            "id": "DocuMind"
+        },
+        {
+            "entity_type": "TECHNOLOGY",
+            "description": "مجاز است برای کاربردهایی مانند Embedding استفاده شود",
+            "id": "RAG"
+        },
+        {
+            "entity_type": "TECHNOLOGY",
+            "description": "Database used for searching in documents",
+            "id": "ChromaDB"
+        },
+        {
+            "entity_type": "PRODUCT",
+            "description": "نسخهٔ مسابقه با قلب ایجنتیک برای ساخت محصول واقعی",
+            "id": "BuildX"
+        },
+        {
+            "entity_type": "CONCEPT",
+            "description": "اولیه‌ای قابل استفاده برای ساخت محصول",
+            "id": "MVP"
+        },
+        {
+            "entity_type": "TECHNOLOGY",
+            "description": "ابزار اتوماسیون که مجاز نیست استفاده شود",
+            "id": "n8n"
+        },
+        {
+            "entity_type": "TECHNOLOGY",
+            "description": "کتابخانه و فریم‌ورک که مجاز است استفاده شود",
+            "id": "Pydantic"
+        },
+        {
+            "entity_type": "TECHNOLOGY",
+            "description": "فریم‌ورک که مجاز است استفاده شود",
+            "id": "LangGraph"
+        },
+        {
+            "entity_type": "TECHNOLOGY",
+            "description": "مدل زبانی بزرگ که باید از طریق یک Provider اجرای محلی تأمین شود",
+            "id": "LLM"
+        },
+        {
+            "entity_type": "ORGANIZATION",
+            "description": "ارائه‌دهندهٔ سرویس برای تأمین دسترسی به مدل‌های زبانی بزرگ",
+            "id": "Provider"
+        },
+        {
+            "entity_type": "TECHNOLOGY",
+            "description": "مجاز است برای کاربردهایی مانند RAG استفاده شود",
+            "id": "Embedding"
+        },
+        {
+            "entity_type": "ORGANIZATION",
+            "description": "سایت مسابقات که لینک مسابقه در آن قرار دارد",
+            "id": "Quera"
+        }
+    ],
+    "edges": [
+        {
+            "relation": "DEVELOPED",
+            "description": "Alpha Company developed DocuMind",
+            "source": "شرکت آلفا",
+            "target": "DocuMind"
+        },
+        {
+            "relation": "USES",
+            "description": "DocuMind uses RAG technology",
+            "source": "DocuMind",
+            "target": "RAG"
+        },
+        {
+            "relation": "USES",
+            "description": "DocuMind uses ChromaDB database",
+            "source": "DocuMind",
+            "target": "ChromaDB"
+        },
+        {
+            "relation": "USED_FOR",
+            "description": "RAG is used for applications such as Embedding.",
+            "source": "RAG",
+            "target": "Embedding"
+        },
+        {
+            "relation": "REQUIRES",
+            "description": "BuildX is a competition version that requires building a usable MVP.",
+            "source": "BuildX",
+            "target": "MVP"
+        },
+        {
+            "relation": "FORBIDDEN",
+            "description": "BuildX does not allow the use of n8n.",
+            "source": "BuildX",
+            "target": "n8n"
+        },
+        {
+            "relation": "ALLOWED",
+            "description": "BuildX allows the use of Pydantic.",
+            "source": "BuildX",
+            "target": "Pydantic"
+        },
+        {
+            "relation": "ALLOWED",
+            "description": "BuildX allows the use of LangGraph.",
+            "source": "BuildX",
+            "target": "LangGraph"
+        },
+        {
+            "relation": "RESTRICTED",
+            "description": "BuildX restricts LLM usage to local execution via a Provider.",
+            "source": "BuildX",
+            "target": "LLM"
+        },
+        {
+            "relation": "ALLOWED",
+            "description": "BuildX allows the use of RAG.",
+            "source": "BuildX",
+            "target": "RAG"
+        },
+        {
+            "relation": "HOSTED_ON",
+            "description": "BuildX is hosted on Quera.",
+            "source": "BuildX",
+            "target": "Quera"
+        },
+        {
+            "relation": "PROVIDES",
+            "description": "A Provider provides access to LLMs.",
+            "source": "LLM",
+            "target": "Provider"
+        }
+    ]
+}
