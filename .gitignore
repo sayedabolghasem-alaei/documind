@@ -1,21 +1,29 @@
-# Virtual Environment
+
+# Python
 venv/
 .venv/
+__pycache__/
+*.py[cod]
 
 # Environment Variables
 .env
 .env.*
+!.env.example
 
-# User Documents
-data/uploads/*
-data/processed/*
+# Frontend
+frontend/node_modules/
+frontend/dist/
 
-# Python Cache
-__pycache__/
-*.py[cod]
+# Local ChromaDB Database
+data/chroma_db/
+
+# Uploaded and Processed Documents
+data/uploads/
+data/processed/
 
 # IDE
 .vscode/
+.idea/
 
 # Operating System
 .DS_Store
