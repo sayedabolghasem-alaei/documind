@@ -28,3 +28,6 @@ data/processed/
 # Operating System
 .DS_Store
 Thumbs.db
+
+# ChromaDB Backup
+data/chroma_db_backup_before_dedup/
