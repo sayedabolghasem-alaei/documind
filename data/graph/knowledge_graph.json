@@ -15,7 +15,7 @@
         },
         {
             "entity_type": "TECHNOLOGY",
-            "description": "مجاز است برای کاربردهایی مانند Embedding استفاده شود",
+            "description": "روشی که مجاز است برای کاربردهایی مانند Embedding استفاده شود",
             "id": "RAG"
         },
         {
@@ -40,33 +40,43 @@
         },
         {
             "entity_type": "TECHNOLOGY",
-            "description": "کتابخانه و فریم‌ورک که مجاز است استفاده شود",
+            "description": "کتابخانه‌ای که مجاز است استفاده شود",
             "id": "Pydantic"
         },
         {
             "entity_type": "TECHNOLOGY",
-            "description": "فریم‌ورک که مجاز است استفاده شود",
+            "description": "فریم‌ورکی که مجاز است استفاده شود",
             "id": "LangGraph"
         },
         {
             "entity_type": "TECHNOLOGY",
-            "description": "مدل زبانی بزرگ که باید از طریق یک Provider اجرای محلی تأمین شود",
+            "description": "مدل زبانی بزرگ که باید از طریق اجرای محلی تأمین شود",
             "id": "LLM"
         },
         {
             "entity_type": "ORGANIZATION",
-            "description": "ارائه‌دهندهٔ سرویس برای تأمین دسترسی به مدل‌های زبانی بزرگ",
+            "description": "ارائه‌دهنده سرویس برای دسترسی به مدل‌های زبانی بزرگ",
             "id": "Provider"
         },
         {
             "entity_type": "TECHNOLOGY",
-            "description": "مجاز است برای کاربردهایی مانند RAG استفاده شود",
+            "description": "مدل‌های امبدینگ که مجاز است برای کاربردهایی مانند RAG استفاده شود",
             "id": "Embedding"
         },
         {
             "entity_type": "ORGANIZATION",
-            "description": "سایت مسابقات که لینک مسابقه در آن قرار دارد",
+            "description": "سایت مسابقات و کلاس‌های آنلاین",
             "id": "Quera"
+        },
+        {
+            "entity_type": "TECHNOLOGY",
+            "description": "خط فرمان که پذیرفته نیست و تصویر یا ماکاپ بدون اتصال به آن کافی نیست",
+            "id": "CLI"
+        },
+        {
+            "entity_type": "PRODUCT",
+            "description": "فرمت فایل که در پایان مسابقه باید تمام موارد را در آن بارگذاری کرد",
+            "id": "Zip"
         }
     ],
     "edges": [
@@ -89,56 +99,86 @@
             "target": "ChromaDB"
         },
         {
-            "relation": "USED_FOR",
-            "description": "RAG is used for applications such as Embedding.",
+            "relation": "USES",
+            "description": "RAG uses Embedding models.",
             "source": "RAG",
             "target": "Embedding"
         },
         {
             "relation": "REQUIRES",
-            "description": "BuildX is a competition version that requires building a usable MVP.",
+            "description": "BuildX requires building an MVP",
             "source": "BuildX",
             "target": "MVP"
         },
         {
             "relation": "FORBIDDEN",
-            "description": "BuildX does not allow the use of n8n.",
+            "description": "BuildX forbids the use of n8n",
             "source": "BuildX",
             "target": "n8n"
         },
         {
             "relation": "ALLOWED",
-            "description": "BuildX allows the use of Pydantic.",
+            "description": "BuildX allows the use of Pydantic",
             "source": "BuildX",
             "target": "Pydantic"
         },
         {
             "relation": "ALLOWED",
-            "description": "BuildX allows the use of LangGraph.",
+            "description": "BuildX allows the use of LangGraph",
             "source": "BuildX",
             "target": "LangGraph"
         },
         {
-            "relation": "RESTRICTED",
-            "description": "BuildX restricts LLM usage to local execution via a Provider.",
+            "relation": "FORBIDDEN",
+            "description": "BuildX forbids direct access to LLMs",
             "source": "BuildX",
             "target": "LLM"
         },
         {
             "relation": "ALLOWED",
-            "description": "BuildX allows the use of RAG.",
+            "description": "BuildX allows the use of RAG",
             "source": "BuildX",
             "target": "RAG"
         },
         {
             "relation": "HOSTED_ON",
-            "description": "BuildX is hosted on Quera.",
+            "description": "BuildX is a contest hosted on Quera",
             "source": "BuildX",
             "target": "Quera"
         },
         {
+            "relation": "ALLOWED",
+            "description": "BuildX allows the use of Embedding models",
+            "source": "BuildX",
+            "target": "Embedding"
+        },
+        {
+            "relation": "REQUIRED",
+            "description": "BuildX requires a Provider for LLM access",
+            "source": "BuildX",
+            "target": "Provider"
+        },
+        {
+            "relation": "FORBIDDEN",
+            "description": "BuildX forbids the use of CLI",
+            "source": "BuildX",
+            "target": "CLI"
+        },
+        {
+            "relation": "REQUIRED",
+            "description": "BuildX requires submission in Zip format",
+            "source": "BuildX",
+            "target": "Zip"
+        },
+        {
+            "relation": "PART_OF",
+            "description": "MVP is the initial usable version of BuildX",
+            "source": "MVP",
+            "target": "BuildX"
+        },
+        {
             "relation": "PROVIDES",
-            "description": "A Provider provides access to LLMs.",
+            "description": "LLM access must be provided by a Provider.",
             "source": "LLM",
             "target": "Provider"
         }

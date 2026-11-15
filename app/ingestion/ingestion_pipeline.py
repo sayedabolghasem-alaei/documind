@@ -36,20 +36,121 @@ class IngestionPipeline:
         self.knowledge_graph = KnowledgeGraph()
         self.graph_storage = GraphStorage()
 
+    # --------------------------------------------------
+    # Chunk ID
+    # --------------------------------------------------
+
     def _create_chunk_id(self, chunk: dict) -> str:
 
-        metadata = chunk["metadata"]
-
-        unique_content = (
-            f'{metadata.get("source", "")}|'
-            f'{metadata.get("file_type", "")}|'
-            f'{metadata.get("chunk_index", "")}|'
-            f'{chunk["text"]}'
+        normalized_text = " ".join(
+            chunk["text"].split()
         )
 
         return hashlib.sha256(
-            unique_content.encode("utf-8")
+            normalized_text.encode("utf-8")
         ).hexdigest()
+
+    # --------------------------------------------------
+    # Metadata Helpers
+    # --------------------------------------------------
+
+    def _get_metadata_values(self, value) -> list[str]:
+
+        if value is None:
+            return []
+
+        if isinstance(value, list):
+            values = value
+        else:
+            values = str(value).split(",")
+
+        return list(dict.fromkeys(
+            str(item).strip()
+            for item in values
+            if str(item).strip()
+        ))
+
+    def _merge_metadata(
+        self,
+        existing: dict,
+        incoming: dict
+    ) -> dict:
+
+        merged = dict(existing)
+
+        # Merge source filenames
+        sources = list(dict.fromkeys(
+            self._get_metadata_values(existing.get("sources"))
+            + self._get_metadata_values(existing.get("source"))
+            + self._get_metadata_values(incoming.get("sources"))
+            + self._get_metadata_values(incoming.get("source"))
+        ))
+
+        merged["sources"] = sources
+        merged["source"] = ", ".join(sources)
+
+        # Merge file types
+        file_types = list(dict.fromkeys(
+            self._get_metadata_values(existing.get("file_types"))
+            + self._get_metadata_values(existing.get("file_type"))
+            + self._get_metadata_values(incoming.get("file_types"))
+            + self._get_metadata_values(incoming.get("file_type"))
+        ))
+
+        merged["file_types"] = file_types
+        merged["file_type"] = ", ".join(file_types)
+
+        # Merge page numbers
+        pages = list(dict.fromkeys(
+            self._get_metadata_values(existing.get("pages"))
+            + self._get_metadata_values(existing.get("page"))
+            + self._get_metadata_values(incoming.get("pages"))
+            + self._get_metadata_values(incoming.get("page"))
+        ))
+
+        merged["pages"] = pages
+
+        # Merge chunk indexes
+        chunk_indices = list(dict.fromkeys(
+            self._get_metadata_values(existing.get("chunk_indices"))
+            + self._get_metadata_values(existing.get("chunk_index"))
+            + self._get_metadata_values(incoming.get("chunk_indices"))
+            + self._get_metadata_values(incoming.get("chunk_index"))
+        ))
+
+        merged["chunk_indices"] = chunk_indices
+
+        return merged
+
+    def _merge_duplicate_chunks(self, chunks: list) -> list:
+
+        unique_chunks = {}
+
+        for chunk in chunks:
+
+            chunk_id = self._create_chunk_id(chunk)
+
+            if chunk_id not in unique_chunks:
+
+                unique_chunks[chunk_id] = {
+                    "text": chunk["text"],
+                    "metadata": dict(chunk["metadata"])
+                }
+
+            else:
+
+                existing_metadata = unique_chunks[
+                    chunk_id
+                ]["metadata"]
+
+                unique_chunks[chunk_id]["metadata"] = (
+                    self._merge_metadata(
+                        existing_metadata,
+                        chunk["metadata"]
+                    )
+                )
+
+        return list(unique_chunks.values())
 
     def _prepare_metadata(self, metadata: dict) -> dict:
 
@@ -68,6 +169,10 @@ class IngestionPipeline:
             prepared_metadata[key] = value
 
         return prepared_metadata
+
+    # --------------------------------------------------
+    # Graph RAG Processing
+    # --------------------------------------------------
 
     def _process_graph(self, chunks: list) -> dict:
 
@@ -116,6 +221,10 @@ class IngestionPipeline:
             "new_relationships": len(relationships)
         }
 
+    # --------------------------------------------------
+    # Main Ingestion Pipeline
+    # --------------------------------------------------
+
     def ingest(self, file_path: str) -> dict:
 
         # Step 1: Load document
@@ -132,27 +241,52 @@ class IngestionPipeline:
                 "stored_chunks": 0
             }
 
-        # Step 3: Extract chunk texts
+        # Step 3: Remove duplicate chunks
+        unique_chunks = self._merge_duplicate_chunks(chunks)
+
+        # Step 4: Extract unique chunk texts
         texts = [
             chunk["text"]
-            for chunk in chunks
+            for chunk in unique_chunks
         ]
 
-        # Step 4: Generate embeddings
+        # Step 5: Generate embeddings
         embeddings = self.embedding_model.encode(texts)
 
-        # Step 5: Prepare IDs and metadata
+        # Step 6: Prepare IDs and metadata
         ids = [
             self._create_chunk_id(chunk)
-            for chunk in chunks
+            for chunk in unique_chunks
         ]
 
         metadatas = [
             self._prepare_metadata(chunk["metadata"])
-            for chunk in chunks
+            for chunk in unique_chunks
         ]
 
-        # Step 6: Store chunks in ChromaDB
+        # Step 7: Merge metadata with existing ChromaDB records
+        existing_data = self.vector_store.collection.get(
+            ids=ids,
+            include=["metadatas"]
+        )
+
+        existing_metadata = dict(zip(
+            existing_data["ids"],
+            existing_data["metadatas"]
+        ))
+
+        for index, chunk_id in enumerate(ids):
+
+            if chunk_id in existing_metadata:
+
+                metadatas[index] = self._prepare_metadata(
+                    self._merge_metadata(
+                        existing_metadata[chunk_id],
+                        metadatas[index]
+                    )
+                )
+
+        # Step 8: Store unique chunks
         self.vector_store.add_documents(
             ids=ids,
             texts=texts,
@@ -160,14 +294,14 @@ class IngestionPipeline:
             metadatas=metadatas
         )
 
-        # Step 7: Process Graph RAG
-        graph_info = self._process_graph(chunks)
+        # Step 9: Process Graph RAG
+        graph_info = self._process_graph(unique_chunks)
 
-        # Step 8: Return ingestion information
+        # Step 10: Return ingestion information
         return {
             "source": file_path,
             "total_documents": len(documents),
             "total_chunks": len(chunks),
-            "stored_chunks": len(ids),
+            "stored_chunks": len(unique_chunks),
             "graph": graph_info
         }

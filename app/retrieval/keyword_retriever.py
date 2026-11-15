@@ -42,21 +42,43 @@ class KeywordRetriever:
             else None
         )
 
+
     def _tokenize(self, text: str) -> list[str]:
 
-        # Normalize Persian and Arabic characters
-        text = text.replace("ي", "ی")
-        text = text.replace("ك", "ک")
-        text = text.replace("ۀ", "ه")
-        text = text.replace("ة", "ه")
+        # Normalize Arabic and Persian characters
+        character_map = str.maketrans({
+            "ي": "ی",
+            "ى": "ی",
+            "ك": "ک",
+            "ۀ": "ه",
+            "ة": "ه",
+            "أ": "ا",
+            "إ": "ا",
+            "ٱ": "ا"
+        })
+
+        text = text.translate(character_map)
+
+        # Remove Arabic diacritics and tatweel
+        text = re.sub(
+            r"[\u064B-\u065F\u0670\u0640]",
+            "",
+            text
+        )
+
+        # Normalize zero-width characters
+        text = text.replace("\u200c", " ")
+        text = text.replace("\u200d", " ")
 
         # Extract Persian, English and numeric tokens
         tokens = re.findall(
-            r"[آ-یA-Za-z0-9]+",
-            text.lower()
+            r"[^\W_]+",
+            text.lower(),
+            flags=re.UNICODE
         )
 
         return tokens
+
 
     def retrieve(
         self,
