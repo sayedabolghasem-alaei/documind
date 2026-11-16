@@ -12,3 +12,5 @@ rank-bm25
 networkx
 requests
 python-dotenv
+
+langgraph==1.2.22

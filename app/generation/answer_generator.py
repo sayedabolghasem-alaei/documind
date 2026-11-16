@@ -36,6 +36,109 @@ class AnswerGenerator:
         self.hybrid_retriever = HybridGraphRetriever()
         self.context_builder = HybridContextBuilder()
 
+    
+    def generate_from_context(self, query: str, context: str) -> str:
+
+        if not query or not query.strip():
+            raise ValueError("Query cannot be empty.")
+
+        if not context or not context.strip():
+            raise ValueError("Context cannot be empty.")
+
+        prompt = f"""
+User Question:
+{query}
+
+Retrieved Context:
+{context}
+
+Instructions:
+- Answer the user's question in Persian.
+- Use only the information provided in the retrieved context.
+- Use both document content and knowledge graph information when relevant.
+- Do not invent facts, entities, or relationships.
+- If the context does not contain enough information,
+  clearly explain that the information is unavailable.
+- Keep the answer clear, accurate, and relevant.
+"""
+
+        payload = {
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a helpful Persian Hybrid Graph RAG assistant. "
+                        "Answer only using the provided context. "
+                        "Do not invent facts or sources. "
+                        "Treat knowledge graph relationships as structured "
+                        "context and do not add relationships that are not provided. "
+                        "If the context does not contain the answer, "
+                        "say that the information is unavailable."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "max_completion_tokens": 512,
+            "temperature": 0.1,
+            "top_p": 0.9,
+            "chat_template_kwargs": {
+                "enable_thinking": False
+            }
+        }
+
+        try:
+            response = requests.post(
+                self.url,
+                headers=self.headers,
+                json=payload,
+                timeout=60
+            )
+
+            response.raise_for_status()
+
+        except requests.exceptions.Timeout:
+            raise TimeoutError(
+                "Cloudflare API request timed out."
+            )
+
+        except requests.exceptions.RequestException as error:
+            raise RuntimeError(
+                f"Cloudflare API request failed: {error}"
+            )
+
+        try:
+            result = response.json()
+
+        except ValueError:
+            raise RuntimeError(
+                "Cloudflare returned an invalid JSON response."
+            )
+
+        if not result.get("success"):
+            raise RuntimeError(
+                f"Cloudflare API error: {result.get('errors')}"
+            )
+
+        choices = result.get("result", {}).get("choices", [])
+
+        if not choices:
+            raise RuntimeError(
+                "No choices returned by Cloudflare."
+            )
+
+        answer = choices[0].get("message", {}).get("content")
+
+        if not answer:
+            raise RuntimeError(
+                "Cloudflare returned an empty answer."
+            )
+
+        return answer.strip()
+
+
     def generate(self, query: str, top_k: int = 3) -> dict:
 
         if not query or not query.strip():
