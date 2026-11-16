@@ -1,10 +1,13 @@
-
 from langgraph.graph import StateGraph, START, END
 
 from app.agent.state import AgentState
 
 from app.agent.nodes.query_analyzer import query_analyzer
-from app.agent.nodes.retrieval import retrieval_node
+
+from app.agent.nodes.retrieval_orchestration import (
+    retrieval_orchestration_node
+)
+
 from app.agent.nodes.context_grader import context_grader_node
 from app.agent.nodes.context_builder import context_builder_node
 from app.agent.nodes.answer_generator import answer_generator_node
@@ -21,35 +24,67 @@ from app.agent.edges import (
 
 def build_agent():
 
-    # Initialize StateGraph
     workflow = StateGraph(AgentState)
 
     # Register nodes
-    workflow.add_node("query_analyzer", query_analyzer)
-    workflow.add_node("retrieval", retrieval_node)
-    workflow.add_node("context_grader", context_grader_node)
-    workflow.add_node("context_builder", context_builder_node)
-    workflow.add_node("answer_generator", answer_generator_node)
-    workflow.add_node("query_rewriter", query_rewriter_node)
-    workflow.add_node("no_context", no_context_node)
+    workflow.add_node(
+        "query_analyzer",
+        query_analyzer
+    )
 
-    # Starting point
-    workflow.add_edge(START, "query_analyzer")
+    workflow.add_node(
+        "retrieval_orchestrator",
+        retrieval_orchestration_node
+    )
 
-    # Query Analyzer routing
+    workflow.add_node(
+        "context_grader",
+        context_grader_node
+    )
+
+    workflow.add_node(
+        "context_builder",
+        context_builder_node
+    )
+
+    workflow.add_node(
+        "answer_generator",
+        answer_generator_node
+    )
+
+    workflow.add_node(
+        "query_rewriter",
+        query_rewriter_node
+    )
+
+    workflow.add_node(
+        "no_context",
+        no_context_node
+    )
+
+    # Start
+    workflow.add_edge(
+        START,
+        "query_analyzer"
+    )
+
+    # Query Analyzer
     workflow.add_conditional_edges(
         "query_analyzer",
         route_after_analysis,
         {
-            "retrieve": "retrieval",
+            "retrieve": "retrieval_orchestrator",
             "no_context": "no_context"
         }
     )
 
-    # Retrieval pipeline
-    workflow.add_edge("retrieval", "context_grader")
+    # Retrieval Orchestration
+    workflow.add_edge(
+        "retrieval_orchestrator",
+        "context_grader"
+    )
 
-    # Context Grader routing
+    # Context Grader
     workflow.add_conditional_edges(
         "context_grader",
         route_after_grading,
@@ -60,17 +95,17 @@ def build_agent():
         }
     )
 
-    # Query Rewriter routing
+    # Query Rewriter
     workflow.add_conditional_edges(
         "query_rewriter",
         route_after_rewriting,
         {
-            "retrieve": "retrieval",
+            "retrieve": "retrieval_orchestrator",
             "no_context": "no_context"
         }
     )
 
-    # Context Builder routing
+    # Context Builder
     workflow.add_conditional_edges(
         "context_builder",
         route_after_context_building,
@@ -80,13 +115,18 @@ def build_agent():
         }
     )
 
-    # Final nodes
-    workflow.add_edge("answer_generator", END)
-    workflow.add_edge("no_context", END)
+    # End
+    workflow.add_edge(
+        "answer_generator",
+        END
+    )
 
-    # Compile graph
+    workflow.add_edge(
+        "no_context",
+        END
+    )
+
     return workflow.compile()
 
 
-# Compiled Agent
 agent = build_agent()

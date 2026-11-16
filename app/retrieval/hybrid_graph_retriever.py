@@ -1,4 +1,3 @@
-
 from app.retrieval.hybrid_retriever import HybridRetriever
 from app.graph.graph_retriever import GraphRetriever
 
@@ -67,6 +66,32 @@ class HybridGraphRetriever:
             "relationships": list(unique_relationships.values())
         }
 
+    # Public Document Retrieval
+    def retrieve_documents(
+        self,
+        query: str,
+        top_k: int = 3
+    ) -> list[dict]:
+
+        if not query or not query.strip():
+            raise ValueError("Query cannot be empty.")
+
+        return self.document_retriever.retrieve(
+            query=query.strip(),
+            top_k=top_k
+        )
+
+    # Public Graph Retrieval
+    def retrieve_graph(self, query: str) -> dict:
+
+        if not query or not query.strip():
+            raise ValueError("Query cannot be empty.")
+
+        return self._retrieve_graph_results(
+            query=query.strip()
+        )
+
+    # Backward-compatible retrieval method
     def retrieve(
         self,
         query: str,
@@ -81,16 +106,15 @@ class HybridGraphRetriever:
 
         query = query.strip()
 
-        # Step 1: Hybrid Document Retrieval
-        vector_results = self.document_retriever.retrieve(
+        vector_results = self.retrieve_documents(
             query=query,
             top_k=top_k
         )
 
-        # Step 2: Knowledge Graph Retrieval
-        graph_results = self._retrieve_graph_results(query)
+        graph_results = self.retrieve_graph(
+            query=query
+        )
 
-        # Step 3: Return combined results
         return {
             "query": query,
             "vector_results": vector_results,
