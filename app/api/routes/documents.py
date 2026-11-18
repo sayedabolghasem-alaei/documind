@@ -1,8 +1,21 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import (
+    APIRouter,
+    UploadFile,
+    File,
+    Form,
+    HTTPException,
+    Depends
+)
+
+from app.schemas.document import (
+    DocumentUploadResponse,
+    DocumentListResponse,
+    DocumentInfo
+)
+
 from starlette.concurrency import run_in_threadpool
 
 from app.api.dependencies import get_document_service
-from app.schemas.document import DocumentUploadResponse
 from app.services.document_service import DocumentService
 
 
@@ -18,15 +31,17 @@ router = APIRouter(
 )
 async def upload_document(
     file: UploadFile = File(...),
+    conversation_id: str | None = Form(default=None),
     service: DocumentService = Depends(get_document_service)
 ):
-    try:
-        content = await file.read()
+    content = await file.read()
 
+    try:
         result = await run_in_threadpool(
             service.upload_document,
             file.filename or "",
-            content
+            content,
+            conversation_id
         )
 
         return result
@@ -37,17 +52,14 @@ async def upload_document(
             detail=str(error)
         )
 
-    except Exception:
+    except Exception as error:
         raise HTTPException(
             status_code=500,
-            detail="An error occurred while processing the document."
+            detail=f"Document upload failed: {str(error)}"
         )
 
     finally:
         await file.close()
-
-
-from app.schemas.document import DocumentListResponse, DocumentInfo
 
 
 @router.get(

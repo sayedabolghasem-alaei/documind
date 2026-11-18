@@ -858,3 +858,115 @@ button {
   direction: ltr;
   text-align: left;
 }
+
+
+/* ==============================
+   Recent Chats
+============================== */
+
+.recent-section {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.conversation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.conversation-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 8px;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.conversation-item:hover {
+    background: rgba(128, 128, 128, 0.12);
+}
+
+.conversation-item.active {
+    background: rgba(128, 128, 128, 0.18);
+}
+
+.conversation-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border: none;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.conversation-actions {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.conversation-item:hover .conversation-actions,
+.conversation-item.active .conversation-actions {
+    opacity: 1;
+}
+
+.conversation-action {
+    width: 25px;
+    height: 25px;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.conversation-action:hover {
+    background: rgba(128, 128, 128, 0.2);
+}
+
+.conversation-action.delete:hover {
+    color: #e05252;
+}
+
+.empty-sidebar-message {
+    padding: 12px 8px;
+    font-size: 12px;
+    opacity: 0.6;
+}
+
+
+/* Scrollbar */
+
+.conversation-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.conversation-list::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.35);
+    border-radius: 10px;
+}
+
+
+/* Mobile and touch devices */
+
+@media (hover: none) {
+    .conversation-actions {
+        opacity: 1;
+    }
+}

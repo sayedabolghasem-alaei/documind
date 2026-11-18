@@ -1,10 +1,10 @@
 
 import json
 import threading
-import uuid
 
 from pathlib import Path
 
+from app.database.conversation_repository import ConversationRepository
 from app.generation.rag_pipeline import RAGPipeline
 
 
@@ -13,6 +13,8 @@ class ChatService:
     def __init__(self):
         self._rag_pipeline = None
         self._pipeline_lock = threading.Lock()
+
+        self.conversation_repository = ConversationRepository()
 
         self.project_root = Path(__file__).resolve().parents[2]
 
@@ -91,7 +93,6 @@ class ChatService:
         """Build source information from retrieved documents."""
 
         filename_map = self._get_filename_map()
-
         source_map = {}
 
         for document in retrieved_documents:
@@ -116,12 +117,10 @@ class ChatService:
                     "distance": distance
                 }
 
-            # Collect page numbers.
             pages = self._extract_pages(metadata)
 
             source_map[stored_name]["pages"].update(pages)
 
-            # Keep the best retrieval distance.
             if distance is not None:
                 current_distance = source_map[stored_name]["distance"]
 
@@ -131,16 +130,14 @@ class ChatService:
                 ):
                     source_map[stored_name]["distance"] = distance
 
-        sources = []
-
-        for source in source_map.values():
-            sources.append({
+        return [
+            {
                 "filename": source["filename"],
                 "pages": sorted(source["pages"]),
                 "distance": source["distance"]
-            })
-
-        return sources
+            }
+            for source in source_map.values()
+        ]
 
     def chat(
         self,
@@ -153,32 +150,84 @@ class ChatService:
         if not query:
             raise ValueError("Query cannot be empty.")
 
+        # Step 1: Create or validate the conversation.
         if conversation_id is None:
-            conversation_id = str(uuid.uuid4())
 
-        # Step 1: Run the RAG pipeline.
+            title = query[:60]
+
+            if len(query) > 60:
+                title += "..."
+
+            conversation_id = (
+                self.conversation_repository.create_conversation(title)
+            )
+
+        else:
+            conversation = (
+                self.conversation_repository.get_conversation(
+                    conversation_id
+                )
+            )
+
+            if conversation is None:
+                raise ValueError("Conversation not found.")
+
+            # Set the title from the first user message.
+            messages = self.conversation_repository.get_messages(
+                conversation_id
+            )
+
+            if not messages and conversation["title"] == "New Chat":
+
+                title = query[:60]
+
+                if len(query) > 60:
+                    title += "..."
+
+                self.conversation_repository.rename_conversation(
+                    conversation_id,
+                    title
+                )
+
+        # Step 2: Save the user message.
+        self.conversation_repository.save_message(
+            conversation_id,
+            "user",
+            query
+        )
+
+        # Step 3: Generate the RAG response.
         result = self.rag_pipeline.run(
             query=query,
             top_k=3
         )
 
-        # Step 2: Get retrieved documents.
+        # Step 4: Extract retrieved documents.
         retrieved_documents = result.get(
             "retrieved_documents",
             []
         )
 
-        # Step 3: Build source information.
+        # Step 5: Build source information.
         sources = self._build_sources(
             retrieved_documents
         )
 
-        # Step 4: Return the final response.
+        # Step 6: Save the assistant response.
+        answer = result.get(
+            "answer",
+            "No answer was generated."
+        )
+
+        self.conversation_repository.save_message(
+            conversation_id,
+            "assistant",
+            answer
+        )
+
+        # Step 7: Return the response.
         return {
-            "answer": result.get(
-                "answer",
-                "No answer was generated."
-            ),
+            "answer": answer,
             "sources": sources,
             "conversation_id": conversation_id
         }

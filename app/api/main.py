@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import chat, documents, health
 
+from app.api.routes import conversations
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -52,6 +53,11 @@ app.include_router(
     prefix="/api/v1"
 )
 
+app.include_router(
+    conversations.router,
+    prefix="/api/v1/conversations",
+    tags=["Conversations"]
+)
 
 @app.get("/")
 def root():

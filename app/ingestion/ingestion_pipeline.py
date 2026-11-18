@@ -15,7 +15,12 @@ from app.graph.graph_storage import GraphStorage
 
 class IngestionPipeline:
 
-    def __init__(self):
+
+    def __init__(
+        self,
+        collection_name: str = "documents",
+        enable_graph: bool = True
+    ):
 
         self.document_loader = DocumentLoader()
 
@@ -27,14 +32,17 @@ class IngestionPipeline:
         self.embedding_model = EmbeddingModel()
 
         self.vector_store = VectorStore(
-            collection_name="documents"
+            collection_name=collection_name
         )
+
+        self.enable_graph = enable_graph
 
         # Graph RAG components
         self.entity_extractor = EntityExtractor()
         self.relationship_extractor = RelationshipExtractor()
         self.knowledge_graph = KnowledgeGraph()
         self.graph_storage = GraphStorage()
+
 
     # --------------------------------------------------
     # Chunk ID
@@ -225,7 +233,11 @@ class IngestionPipeline:
     # Main Ingestion Pipeline
     # --------------------------------------------------
 
-    def ingest(self, file_path: str) -> dict:
+    def ingest(
+        self,
+        file_path: str,
+        conversation_id: str | None = None
+    ) -> dict:
 
         # Step 1: Load document
         documents = self.document_loader.load(file_path)
@@ -243,6 +255,12 @@ class IngestionPipeline:
 
         # Step 3: Remove duplicate chunks
         unique_chunks = self._merge_duplicate_chunks(chunks)
+
+        # Attach conversation scope to every chunk.
+        if conversation_id is not None:
+
+            for chunk in unique_chunks:
+                chunk["metadata"]["conversation_id"] = conversation_id
 
         # Step 4: Extract unique chunk texts
         texts = [
@@ -295,7 +313,10 @@ class IngestionPipeline:
         )
 
         # Step 9: Process Graph RAG
-        graph_info = self._process_graph(unique_chunks)
+        graph_info = None
+
+        if self.enable_graph:
+            graph_info = self._process_graph(unique_chunks)
 
         # Step 10: Return ingestion information
         return {

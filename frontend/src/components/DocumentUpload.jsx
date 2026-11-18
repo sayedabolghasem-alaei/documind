@@ -2,7 +2,10 @@
 import { useRef, useState } from "react";
 import { uploadDocument } from "../services/api";
 
-function DocumentUpload({ onUploadSuccess }) {
+function DocumentUpload({
+  onUploadSuccess,
+  conversationId = null
+}) {
   const fileInputRef = useRef(null);
 
   const [isUploading, setIsUploading] = useState(false);
@@ -26,6 +29,7 @@ function DocumentUpload({ onUploadSuccess }) {
     ];
 
     const allowedExtensions = [".pdf", ".docx", ".txt"];
+
     const fileExtension = file.name
       .slice(file.name.lastIndexOf("."))
       .toLowerCase();
@@ -48,15 +52,26 @@ function DocumentUpload({ onUploadSuccess }) {
     try {
       setIsUploading(true);
 
-      const response = await uploadDocument(file);
+      const response = await uploadDocument(
+        file,
+        conversationId
+      );
 
-      setSuccess(response.message || "Document uploaded successfully.");
+      setSuccess(
+        response.message || "Document uploaded successfully."
+      );
 
       if (onUploadSuccess) {
         await onUploadSuccess(response);
       }
+
     } catch (err) {
-      setError(err.message || "Document upload failed.");
+      setError(
+        err.response?.data?.detail ||
+        err.message ||
+        "Document upload failed."
+      );
+
     } finally {
       setIsUploading(false);
       event.target.value = "";

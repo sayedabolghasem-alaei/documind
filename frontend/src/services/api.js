@@ -19,11 +19,16 @@ async function handleResponse(response) {
   return data;
 }
 
+
 // Upload a document
-export async function uploadDocument(file) {
+export const uploadDocument = async (file, conversationId = null) => {
   const formData = new FormData();
 
   formData.append("file", file);
+
+  if (conversationId) {
+    formData.append("conversation_id", conversationId);
+  }
 
   const response = await fetch(
     `${API_BASE_URL}/documents/upload`,
@@ -34,7 +39,7 @@ export async function uploadDocument(file) {
   );
 
   return handleResponse(response);
-}
+};
 
 // Get all uploaded documents
 export async function getDocuments() {
@@ -63,3 +68,83 @@ export async function sendMessage(query, conversationId = null) {
 
   return handleResponse(response);
 }
+
+// ==============================
+// Conversation APIs
+// ==============================
+
+export const getConversations = async () => {
+    const response = await fetch(`${API_BASE_URL}/conversations/`);
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch conversations.");
+    }
+
+    return response.json();
+};
+
+
+export const createConversation = async (title = "New Chat") => {
+    const response = await fetch(`${API_BASE_URL}/conversations/`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ title }),
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to create conversation.");
+    }
+
+    return response.json();
+};
+
+
+export const getConversation = async (conversationId) => {
+    const response = await fetch(
+        `${API_BASE_URL}/conversations/${conversationId}`
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch conversation.");
+    }
+
+    return response.json();
+};
+
+
+export const renameConversation = async (conversationId, title) => {
+    const response = await fetch(
+        `${API_BASE_URL}/conversations/${conversationId}`,
+        {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ title }),
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to rename conversation.");
+    }
+
+    return response.json();
+};
+
+
+export const deleteConversation = async (conversationId) => {
+    const response = await fetch(
+        `${API_BASE_URL}/conversations/${conversationId}`,
+        {
+            method: "DELETE",
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to delete conversation.");
+    }
+
+    return response.json();
+};
